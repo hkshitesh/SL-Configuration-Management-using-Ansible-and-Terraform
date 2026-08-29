@@ -1,0 +1,22 @@
+---
+- hosts: dbservers
+  become: yes
+
+  vars:
+    operation: install
+    packages: []
+
+  tasks:
+    - name: Install packages
+      action: apt name={{ item }} state=present update_cache=yes
+      loop: "{{ packages }}"
+      when: operation == "install"
+
+    - name: Remove packages
+      action: apt name={{ item }} state=absent
+      loop: "{{ packages }}"
+      when: operation == "remove"
+
+    - name: Autoremove unused packages
+      action: command apt autoremove -y
+      when: operation == "remove"
