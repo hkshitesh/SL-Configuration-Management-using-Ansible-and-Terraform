@@ -1,0 +1,57 @@
+---
+- name: Deploy Nginx on Localhost using Jinja2 Template
+  hosts: webservers
+  become: yes
+
+  vars_files:
+    - vars.yml
+
+  tasks:
+
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Create web root directory
+      file:
+        path: "{{ root_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Create test index.html
+      copy:
+        dest: "{{ root_dir }}/index.html"
+        content: "Welcome to Nginx on port {{ listen_port }} served via Jinja2 template!"
+
+    - name: Deploy nginx site template
+      template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/sites-available/myapp.conf
+
+    - name: Enable site
+      file:
+        src: /etc/nginx/sites-available/myapp.conf
+        dest: /etc/nginx/sites-enabled/myapp.conf
+        state: link
+        force: yes
+
+    - name: Remove default nginx site
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Test nginx config
+      command: nginx -t
+      register: result
+      ignore_errors: yes
+
+    - debug:
+        msg: "{{ result.stdout }}"
+
+    - name: Restart nginx
+      service:
+        name: nginx
+        state: restarted
+      when: result.rc == 0
