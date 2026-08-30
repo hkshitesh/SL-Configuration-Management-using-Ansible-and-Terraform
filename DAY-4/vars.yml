@@ -1,0 +1,4 @@
+server_name: localhost
+listen_port: 8081
+root_dir: /var/www/myapp
+enable_logging: true
